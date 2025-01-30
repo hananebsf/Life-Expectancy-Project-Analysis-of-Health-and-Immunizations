@@ -11,10 +11,15 @@ This project explores the relationship between vaccination rates and life expect
 
 ### 📂 Repository Structure
 📦 Life-Expectancy-Project │── 📁 dataset/ # Raw and cleaned data files
+
 │── 📜 Life_Expectancy.Rmd # R Markdown analysis script
+
 │── 📜 Life_Expectancy.html # HTML report from R Markdown
+
 │── 📜 Life Expectancy Presentation.pptx # Project presentation
+
 │── 📜 Project.Rproj # R Project file
+
 │── 📜 README.md # Project documentation (this file)
 
 ### 📊 Data & Key Variables
