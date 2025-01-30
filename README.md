@@ -60,9 +60,10 @@ Included additional socioeconomic factors such as urbanization, fertility rate, 
 Higher fertility rates & tuberculosis incidence negatively impact life expectancy.
 Education & food security show positive correlations with life expectancy.
 Unexpectedly, higher vaccination rates correlated with slightly lower life expectancy, likely due to confounding variables.
+
 ---
 
-## 🔧 How to Run the Analysis  
+### 🔧 How to Run the Analysis  
 📌 Install the following R packages before running the scripts:  
 
 ```r
