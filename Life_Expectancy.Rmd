@@ -1,0 +1,428 @@
+---
+title: "Life Expectancy Project: Analysis of Health and Immunizations"
+output: html_document
+editor_options: 
+  markdown: 
+    wrap: sentence
+---
+
+```{r setup, include=FALSE}
+library(readr)
+library(dplyr)
+library(stringr)
+library(ggplot2)
+```
+
+
+# Simple and Multiple Linear Regression Analysis of Life Expectancy at the Country Level
+
+## Introduction 
+
+Life expectancy is a crucial indicator of the overall health of a population.
+Immunizations, such as DTP and measles vaccines, are believed to contribute to public health improvements and reduce mortality from these preventable diseases.
+In our project, we will explore the relationship between immunization and life expectancy across different countries, using the 2020 United Nations Human Development Data.
+
+The key question is: Are higher vaccination rates correlate with increased life expectancy across different countries?
+
+### Dataset and Key Variables
+
+-   **life**: Life expectancy at birth (in years) : this is the our outcome variable
+-   **dtp_vax_no**: Number of DTP vaccinations (per 100 population). DTP is a combination of vaccines that protects against three infectious diseases: diphtheria, tetanus, and pertussis.
+-   **measles_vax_no**: Number of measles vaccinations (per 100 population) pop: Total population
+
+### Reading Data
+
+One row had to be skipped because row 2 was the true headers of this data.
+
+```{r echo = T, results = 'hide'}
+life_data <- read.csv("dataset/UNHDD 2020.csv", skip = 1)
+head(life_data)
+```
+
+## Exploratory Data Analysis
+
+### Cleaning Data
+
+In the dataset, missing values are represented as "..".
+We will replace empty values with Null.
+We will also save the cleaned dataset into a clean_data folder for further use.
+
+```{r echo = T, results = 'hide'}
+# Replace ".." with NA
+life_data[life_data == ".."] <- NA
+life_data <- life_data %>% mutate_if(is.character, as.numeric)
+
+# View the first few rows to verify
+head(life_data)
+
+# Write file 
+write_csv(life_data, "dataset/life_data.csv")
+```
+
+## Relationship Between Life Expectancy and Immunizations
+
+We selected key variables of interest for further analysis: life expectancy and vaccination rates (DTP and measles).
+
+```{r}
+selected_data <- life_data %>%
+  select(country, life, dtp_vax_no, measles_vax_no)
+
+head(selected_data)
+```
+
+## Distribution of Key Variables
+
+We will visualize the distribution of vaccination rates and their relationship with life expectancy.
+
+### Scatter Plots
+
+```{r}
+# Scatter plot for DTP vaccinations vs life expectancy
+scatter_plot <- ggplot(life_data, aes(x = dtp_vax_no, y = life)) +
+  geom_point(color = "black", fill = "blue", shape = 21, size = 3) +
+  labs(
+    x = "DTP Vaccinations",
+    y = "Life Expectancy"
+  ) +
+  ggtitle("Relationship between DTP Vaccinations and Life Expectancy")
+
+print(scatter_plot)
+
+# Scatter plot for Measles vaccinations vs life expectancy
+scatter_plot2 <- ggplot(life_data, aes(x = measles_vax_no, y = life)) +
+  geom_point(color = "black", fill = "blue", shape = 21, size = 3) +
+  labs(
+    x = "Measles Vaccinations",
+    y = "Life Expectancy"
+  ) +
+  ggtitle("Relationship between Measles Vaccinations and Life Expectancy")
+
+print(scatter_plot2)
+```
+
+### Histograms
+
+```{r}
+# Histogram for the DTP Vaccine 
+## Convert vaccination numbers to numeric to generate histograms
+life_data$dtp_vax_no <- as.numeric(life_data$dtp_vax_no)
+
+## Check for any conversion warnings or issues
+summary(life_data$dtp_vax_no)
+
+## Now we create the histogram for DTP Vaccinations
+h1 <- hist(life_data$dtp_vax_no,
+          main = "DTP Vaccine",
+          xlab = "DTP Vaccine Number",
+          col = "blue",
+          border = "black")
+
+h1_log <- hist(log(life_data$dtp_vax_no),
+          main = "Log-Transformed Distribution of DTP Vaccinations",
+          xlab = "DTP Vaccine Number",
+          col = "blue",
+          border = "black")
+```
+
+The distribution of the DTP vaccine is right skewed.
+However, log transformation improves the distribution of dtp vaccine numbers enough for it to be viably used in linear regression.
+
+```{r echo = T, results = 'hide'}
+## Print the histogram object to see details
+print(h1)
+```
+
+```{r}
+# Histogram for the Measles Vaccine 
+## Convert vaccination numbers to numeric to generate histograms
+life_data$measles_vax_no <- as.numeric(life_data$measles_vax_no)
+
+## Check for any conversion warnings or issues
+summary(life_data$measles_vax_no)
+
+## Now we create the histogram for measles vaccines
+h2 <- hist(life_data$measles_vax_no,
+          main = "Measles Vaccine",
+          xlab = "Measles Vaccine Number",
+          col = "blue",
+          border = "black")
+
+h2_log <- hist(log(life_data$measles_vax_no),
+          main = "Log-Transformed Distribution of Measeles Vaccinations",
+          xlab = "Measles Vaccine Number",
+          col = "blue",
+          border = "black")
+```
+
+The distribution of the measles vaccine variable is similarly right-skewed.
+However, log transformation improves the distribution enough for it to be viably used in linear regression.
+
+```{r echo = T, results = 'hide'}
+##Print the histogram object to see details
+print(h2)
+```
+
+## Simple Linear Regression Analysis
+
+Before conducting a multiple linear regression, we will explore the relationship between each vaccination variable and life expectancy using simple linear regression.
+This will help us understand the direct effect of each vaccination variable individually.
+
+### Simple Linear Regression: DTP Vaccinations
+
+```{r}
+model_dtp <- lm(life ~ log(dtp_vax_no), data = life_data)
+
+# Summary of the regression results
+summary(model_dtp)
+
+# Confidence intervals
+confint(model_dtp)
+```
+
+```{r}
+plot(model_dtp)
+```
+
+Based on the above plots log transformation of the explanatory variable enables the model to meet the assumptions necessary for valid linear regression.
+
+### Simple Linear Regression: Measles Vaccinations
+
+```{r}
+model_measles <- lm(life ~ log(measles_vax_no), data = life_data)
+
+# Summary of the regression results
+summary(model_measles)
+
+# Confidence intervals
+confint(model_measles)
+```
+
+```{r}
+plot(model_measles)
+```
+
+Based on the above plots log transformation of the explanatory variable enables the model to meet the assumptions necessary for valid linear regression.
+
+### Interpretation of Simple Linear Regression Results
+
+**DTP Vaccinations:** The simple linear regression model for DTP vaccinations shows that the coefficient is -3.47 , with a p-value of 1.22e-15.
+The model suggests that a 1log unit increase of DTP vaccinations is associated with a decrease of 0.035 years in life expectancy.
+Additionally the p-value suggests that this relationship is statistically significant.
+
+**Measles Vaccinations:** The simple linear regression model for measles vaccinations shows that the coefficient is -3.29 , with a highly significant p-value of 2.99e-14.
+This model suggests that a 1log unit increase in measles vaccinations is associated with a decrease in life expectancy by 0.033 years.
+This negative relationship is statistically significant as denoted by the p-value.
+
+## Hypothesis Testing and Multiple Linear Regression Analysis
+
+### Hypotheses
+
+We aim to test the following hypotheses:
+
+**Null Hypothesis (H0)**: Vaccination rates (DTP and Measles) have no effect on life expectancy.
+
+**Alternative Hypothesis (H1)**: Vaccination rates (DTP and Measles) have significant effect on life expectancy.
+
+We will use multiple linear regression to test these hypotheses.
+
+```{r}
+# Linear regression model for DTP and Measles vaccinations
+model_vaccines <- lm(life ~ log(dtp_vax_no) + log(measles_vax_no), data = life_data)
+
+# Summary of regression results
+summary(model_vaccines)
+
+# Confidence intervals
+confint(model_vaccines)
+
+```
+
+```{r}
+plot(model_vaccines)
+```
+
+Similar to the previous plots for the two explanatory variables in isolation, the multiple regression model also meets the assumptions required for valid linear regression.
+
+## Interpretation of Results
+
+We conducted a multiple linear regression analysis to examine the relationship between life expectancy and two predictor variables: DTP vaccinations and measles vaccinations.
+Below is the interpretation of the results:
+
+#### Intercept:
+
+The intercept is **78.48**, meaning that when the number of DTP and measles vaccinations are zero, the predicted life expectancy would be 78.48 years.
+*This value reflects the expected life expectancy in the absence of vaccinations.*
+
+#### - DTP Vaccinations:
+
+The coefficient for DTP vaccinations is -2.26, which suggests a slight negative relationship between DTP vaccinations and life expectancy.
+However we have a p-value = 0.0006 meaning we do have strong evidence to suggest that DTP vaccinations have a meaningful impact on life expectancy in this dataset.
+
+Based on the model, a 1log unit increase in people vaccinated against diphtheria is associated with a decrease in life expectancy of 0.0226 years.
+
+#### - Measles Vaccinations:
+
+The coefficient for measles vaccinations is -1.51, indicating a negative relationship between measles vaccinations and life expectancy.
+and we notice a p-value = 0.0198.
+This p-value is statistically significant, meaning that there is strong evidence that measles vaccinations are associated with a decrease in life expectancy, which is counterproductive.
+
+Based on the model, a 1log unit increase in people vaccinated against measles is associated with a decrease in life expectancy by 0.015 years.
+**This is an unexpected result, as we would generally anticipate a positive or a neutral relationship between vaccinations and life expectancy.** This could indicate potential issues such as other variables or specific conditions in some countries where high vaccination rates correspond with other negative factors.
+
+#### Confidence Intervals:
+
+The 95% confidence interval for the DTP coefficient is [-3.53, -0.97], which does not include zero.
+This confirms that the effect of DTP vaccinations is statistically significant, as zero is not plausible value for the coefficient.
+
+The confidence interval for measles vaccinations is [-2.77, -0.24], which does not include zero, reinforcing the statistically significant negative association between measles vaccinations and life expectancy.
+
+## Vaccinations Linear Regression Conclusion
+
+DTP vaccinations do show a statistically significant negative association with life expectancy in this dataset, and the relationship appears strong.
+Measles vaccinations also present with a statistically significant negative association with life expectancy, both of which is unexpected.
+This finding should be explored further to understand potential confounding factors or data quality issues.
+Possible avenues include exploring interactions with other variables or including additional health and socio-economic indicators in the model.
+
+## Multiple Linear Regression - Exploration of Additional Variables
+
+The earlier simple linear regression identified that vaccine rates alone are unable to fully explain variations in life expectancy across countries.
+Logically the next step in the research is to further explore additional variables that may serve as better predictors of life expectancy with the hope of producing a more conclusive statistical model.
+Multiple linear regression was chosen as the tool of choice for this analysis due to its ability to accommodate multiple explanatory variables of various data types.
+
+### Variables Identified for Exploration
+
+|  |  |
+|----------------------|-------------------------------------------------|
+| **Variable** | **Rationale for Inclusion** |
+| **Total Population** | Variance in population numbers could have an impact on life expectancy via a variety of economic and social factors. |
+| **Total Fertility Rate** | The number of children a woman has could acutely affect individual life expectancy and could also serve as a signal for wider societal dysfunction. |
+| **Infant Mortality** | Infant mortality likely significantly impacts life expectancy measures as naturally the associated low age of death would substantially affect the average. |
+| **Urban Population** | Variation in urban population percentages could contribute to variability in life expectancy through disease rates, crime prevalence, and overall economic opportunity. |
+| **Prison Population** | Higher prison population could be indicative of increased violent crime; prisons can also serve as a vector to spread disease. Both of which could have a significant impact on life expectancy. |
+| **Tuberculosis Incidence** | Tuberculosis is a somewhat preventable but serious communicable disease that could serve as a proxy measure of overall healthcare infrastructure. It also has the potential to influence life expectancy in a number of downstream associations due to infection complications. |
+| **Median Age** | Median age is likely to be a confounding variable for many of the explanatory variables included in this analysis; as such it has been incorporated to add depth and validity to drawn conclusions. |
+| **Mean Years of Schooling** | Highly educated individuals are probably likely to be more health conscious; thus, mean years of schooling has been included in the analysis to evaluate the statistical strength of the relationship between it and life expectancy. |
+| **Depth of Food Deficit** | Naturally if a country has less food its people are probably more likely to be malnourished, increasing risk of disease and death and likley contributing to reduced life expectancy measures. |
+| **Total GDP** | This variable represents the economic strength of individual countries; in this case the hypothesized relationship is that economic strength facilitates better healthcare and lifestyles for citizens, potentially improving life expectancy. |
+| **Migration** | Higher rates of migration could serve as an additional vector for communicable disease; on the other hand high migration rates could indicate a desirable country to live in economically. |
+
+### Dataset Preprocessing
+
+```{r}
+##install.packages("corrplot")
+library(corrplot)
+
+## preprocessing
+country_data <- read.csv("dataset/UNHDD 2020.csv", skip = 1)
+
+country_data[country_data[, 1:70] == '..'] <- NA
+
+NA_counts <- data.frame(sapply(country_data, function(x) sum(is.na(x))))
+```
+
+### Checking Assumptions
+
+Independence is assumed per the nature of the dataset.
+
+#### Baseline Linear Relationship and Multicollinearity
+
+```{r}
+## parsing dataset for only relevant variables
+country_data_regression <- country_data %>% 
+            select('pop', 'fertility', 'mort_infant', 'urban', 'tb', 'age_median', 'educ_mean', 'food_deficit', 'gdp_total', 'prison', 'migration', 'life') %>%
+mutate_if(is.character, as.numeric)
+
+## corrplot analysis
+
+corrplot(cor(country_data_regression, use="pairwise.complete.obs"), method = 'number',
+         tl.cex = 1,          # Increase text label size
+         tl.srt = 45,         # Rotate text labels by 45 degrees for better readability
+         number.cex = 0.7     # number size in the table 
+         )
+```
+
+Some variables are not correlated at all with life expectancy or are highly correlated (\>0.8) with other explanatory variables so they should be removed to improve the interpretability of the results.
+
+```{r}
+## remove highly correlated variables (> 0.8)
+country_data_regression <- country_data %>% 
+            select('urban', 'tb', 'fertility', 'educ_mean', 'food_deficit', 'gdp_total', 'prison', 'migration', 'life') %>%
+mutate_if(is.character, as.numeric)
+
+##corrplot analysis
+corrplot(cor(country_data_regression, use="pairwise.complete.obs"), method = 'number',
+         tl.cex = 1,          # Increase text label size
+         tl.srt = 45,         # Rotate text labels by 45 degrees for better readability
+         number.cex = 0.7     # number size in the table 
+         )
+```
+
+After removing irrelevant and highly correlated variables (pop, mort_infant, age_median), multicollinearity is improved and all explanatory variables have some form of linear relationship with life expectancy.
+
+#### Homoscedasticity
+
+Fitting the regression model for use in evaluation of assumptions:
+
+```{r}
+## fit regression model
+regression_model <- lm(life ~
+                       + urban + fertility + tb + prison + migration +
+                       + educ_mean + food_deficit + gdp_total, country_data_regression)
+```
+
+```{r}
+## plot residuals via scatter plot
+plot(regression_model, 1)
+```
+
+No distinct non-linear patterns can be discerned in the above scatter plot of residuals versus fitted values indicating the variance of the residuals is generally constant.
+
+#### Normality of Residuals
+
+```{r}
+## qqline plot to assess normality
+qqnorm(resid(regression_model))
+qqline(resid(regression_model))
+```
+
+Based on the qqplot the residuals appear to generally be normally distributed as they for the most part closely follow the line marked in the plot.
+
+### Hypotheses
+
+-   **Null** - None of the selected predictor variables significantly contribute to life expectancy.
+
+-   **Alternative** - At least one of the selected predictor variables significantly contributes to life expectancy.
+
+### Regression Model Results
+
+All assumptions are effectively satisfied so we can move forward with summarizing and interpreting the results of the multiple linear regression model.
+
+```{r}
+## Return regression results
+summary(regression_model)
+```
+
+### Interpretation
+
+Overall the multiple regression model with the selected variables performs well on this data; returning an R2 of .8367 and a significant p-value less than 2.2e-16.
+The p-value is significant so we can **reject the null hypothesis** and assume that there is **strong statistical evidence that at least one of the predictor variables contributes effectively to life expectancy**.
+Additionally, the R2 of .8367 is also strong, indicating that the set of predictor variables included in the model are responsible for about 84% of the change in the response variable.
+
+Using p-value as an evaluation metric, most of the included variables are identified as significant contributors to the model: migration, educ_mean, and food deficit all reported p-values less than the 0.01 significance threshold.
+Fertility and tb were even stronger contributors, reporting p-values less than the 0.001 significance threshold, making them the most significant contributors in the variable set.
+Of the significant variables, fertility and tb both present with a negative coefficient, indicating a negative relationship with life expectancy.
+Conversely, migration, educ_mean, and food_deficit all present with positive coefficients indicating that they are positively associated with life expectancy.
+
+### Discussion
+
+Interestingly **fertility** is the most significant factor in life expectancy based on the multiple regression model.
+A possible explanation for the observed negative association could be that families in less developed countries have higher number of children to support lifestyles that are agriculture and labor oriented, and those less developed countries present with other factors that reduce life expectancy such as less developed overall healthcare infrastructure.
+
+The explanation for tuberculosis incidence as the second most important variable is likely more straightforward in that tuberculosis probably has a direct negative effect on overall health of a population, especially in developing countries with less developed healthcare systems.
+The significance of migration, mean years of education, and food deficit in terms of their relationship with life expectancy is probably that they are all possible proxy variables for a countries economic status.
+More economically successful countries will have more incoming immigration, a more educated population, and a lower food deficit.
+
+Naturally economically successful countries will be able to spend more money on the healthcare of their citizens, improving life expectancy.
+Food deficit also likely has a direct impact on life expectancy in that malnourished individuals are probably likely to experience a general reduction in health.
+Overall the multiple regression analysis was able to identify a set of strong predictor variables that explained variation in life expectancy across countries with reasonable accuracy.
+The model's performance will likely improve with the inclusion of additional high quality variables.
